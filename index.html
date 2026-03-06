@@ -437,13 +437,8 @@ function startGenerate() {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     signCanvas = document.getElementById('sign-canvas');
     signCtx = signCanvas.getContext('2d');
-    // Use device pixel ratio for crisp lines
-    const dpr = window.devicePixelRatio || 1;
-    const w = signCanvas.offsetWidth;
-    const h = signCanvas.offsetHeight;
-    signCanvas.width  = w * dpr;
-    signCanvas.height = h * dpr;
-    signCtx.scale(dpr, dpr);
+    signCanvas.width  = signCanvas.offsetWidth;
+    signCanvas.height = signCanvas.offsetHeight;
     signCtx.strokeStyle = '#0f172a';
     signCtx.lineWidth = 3;
     signCtx.lineCap = 'round';
@@ -462,13 +457,8 @@ function startGenerate() {
 
 function getPos(e) {
   const r = signCanvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
   const src = e.touches ? e.touches[0] : e;
-  // Normalize by DPR since we scaled the context
-  return {
-    x: (src.clientX - r.left),
-    y: (src.clientY - r.top)
-  };
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
 }
 
 function signStart(e) {
