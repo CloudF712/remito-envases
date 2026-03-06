@@ -454,18 +454,19 @@ const state = {
   recibidos:  [],
   currentMode: null,
   scanner: null,
+  remitoNum: parseInt(localStorage.getItem('remitoNum') || '0') + 1,
 };
 
 // ── TUBE DATA LOOKUP ───────────────────────────────────────────────────────
 // Reads tube info from QR URL params
 function parseTubeFromQR(text) {
   try {
-    // QR format: https://...?tubo=XXXXXX
     const url = new URL(text);
     const tubo = url.searchParams.get('tubo');
-    if (tubo) return { tube: tubo, gas: '', capacity: '' };
+    const gas  = url.searchParams.get('gas') || '';
+    const cap  = url.searchParams.get('cap') || '';
+    if (tubo) return { tube: tubo, gas, capacity: cap };
   } catch {}
-  // Fallback: plain tube number
   if (/^\d+$/.test(text.trim())) return { tube: text.trim(), gas: '', capacity: '' };
   return null;
 }
@@ -645,70 +646,79 @@ async function generatePDF() {
   const margin = 12;
 
   // ── HEADER BOX ──
-  doc.setDrawColor(30, 60, 120);
-  doc.setLineWidth(0.5);
-  doc.rect(margin, 10, W - margin*2, 42);
-
-  // Vertical divider in header
-  doc.line(90, 10, 90, 52);
-  // Another divider
-  doc.line(130, 10, 130, 28);
-
-  // Company name
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(20, 40, 100);
-  doc.text('OXÍGENO BS. AS.', 14, 20);
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(60, 60, 60);
-  doc.text('FERRETERÍA INDUSTRIAL', 14, 26);
-  doc.text('de Marcelo F. Vital', 14, 30);
-  doc.text('Argon · Atal · Co2 · Nitrógeno · Acetileno · Helio · Oxígeno', 14, 34);
-  doc.text('Mig · Tig · Plasma / Reparaciones', 14, 38);
-  doc.setFont('helvetica', 'bold');
-  doc.text('TALLER PROPIO', 14, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text('ALVEAR Nº 2031 (C.P. 1611) DON TORCUATO', 14, 46);
-  doc.text('TEL: 4741-6159 / 4748-3275', 14, 50);
-
-  // Top right - title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(20, 40, 100);
-  doc.text('CONTROL DE ENVASES', 135, 18, { align: 'center' });
-
-  // Date
+  // Layout: [empresa: 12-88] | [sello: 88-118] | [titulo+datos: 118-198]
   const now = new Date();
   const dd = String(now.getDate()).padStart(2,'0');
   const mm = String(now.getMonth()+1).padStart(2,'0');
   const yy = String(now.getFullYear());
+  const rNum = String(state.remitoNum).padStart(8, '0');
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(60,60,60);
-  doc.text(`Fecha: ${dd} / ${mm} / ${yy}`, 135, 30, { align: 'center' });
+  doc.setDrawColor(30, 60, 120);
+  doc.setLineWidth(0.5);
+  doc.rect(margin, 10, W - margin*2, 44);
 
-  // CUIT etc
-  doc.setFontSize(7.5);
-  doc.text('C.U.I.T.: 20-17996988-3', 135, 38, { align: 'center' });
-  doc.text('ING. BRUTOS C.M.: 902-435522-9', 135, 43, { align: 'center' });
-  doc.text('INICIO ACTIVIDAD: 01/01/96', 135, 48, { align: 'center' });
-
-  // "No válido como factura" box
-  doc.setDrawColor(30,60,120);
+  // Dividers
   doc.setLineWidth(0.4);
-  doc.rect(92, 11, 36, 16);
+  doc.line(88, 10, 88, 54);   // empresa | sello
+  doc.line(120, 10, 120, 54); // sello | titulo
+
+  // ── EMPRESA (left column) ──
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(20, 40, 100);
+  doc.text('OXÍGENO BS. AS.', 14, 19);
+
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(50, 50, 50);
+  doc.text('FERRETERÍA INDUSTRIAL', 14, 24);
+  doc.text('de Marcelo F. Vital', 14, 28);
+  doc.text('Argon · Atal · Co2 · Nitrógeno', 14, 32);
+  doc.text('Acetileno · Helio · Oxígeno', 14, 36);
+  doc.text('Mig · Tig · Plasma / Reparaciones', 14, 40);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TALLER PROPIO', 14, 44);
+  doc.setFont('helvetica', 'normal');
+  doc.text('ALVEAR Nº 2031 (C.P. 1611)', 14, 48);
+  doc.text('DON TORCUATO', 14, 52);
+
+  // ── SELLO (center column) ──
+  doc.setDrawColor(30,60,120);
+  doc.setLineWidth(0.5);
+  doc.rect(90, 12, 28, 18);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(20,40,100);
-  doc.text('DOCUMENTO', 110, 16, { align: 'center' });
-  doc.text('NO VÁLIDO', 110, 20, { align: 'center' });
-  doc.text('COMO FACTURA', 110, 24, { align: 'center' });
+  doc.text('DOCUMENTO', 104, 18, { align: 'center' });
+  doc.text('NO VÁLIDO', 104, 23, { align: 'center' });
+  doc.text('COMO FACTURA', 104, 28, { align: 'center' });
+
+  // ── TITULO+DATOS (right column) ──
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(20, 40, 100);
+  doc.text('CONTROL DE ENVASES', 159, 17, { align: 'center' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(30,30,30);
+  doc.text(`Nº 0001 - ${rNum}`, 159, 24, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.text(`Fecha: ${dd} / ${mm} / ${yy}`, 159, 31, { align: 'center' });
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(60,60,60);
+  doc.text('C.U.I.T.: 20-17996988-3', 159, 38, { align: 'center' });
+  doc.text('ING. BRUTOS C.M.: 902-435522-9', 159, 43, { align: 'center' });
+  doc.text('INICIO ACTIVIDAD: 01/01/96', 159, 48, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('I.V.A. Responsable Inscripto', 159, 53, { align: 'center' });
 
   // ── CLIENT INFO ──
-  let y = 56;
+  let y = 58;
   doc.setDrawColor(30,60,120);
   doc.setLineWidth(0.4);
   doc.rect(margin, y, W - margin*2, 28);
@@ -867,7 +877,9 @@ async function generatePDF() {
     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: `Remito ${clientName}` });
-      showToast('¡Remito compartido!', 'success');
+      localStorage.setItem('remitoNum', state.remitoNum);
+  state.remitoNum++;
+  showToast('¡Remito compartido!', 'success');
     } else {
       // Fallback: download
       const url = URL.createObjectURL(pdfBlob);
