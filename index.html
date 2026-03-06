@@ -82,45 +82,34 @@
   .done-btn.green{background:var(--green);color:white;}
   .done-btn:disabled{opacity:.4;cursor:not-allowed;}
 
-  /* ── SIGNATURE SCREEN — forced landscape fullscreen ── */
+  /* ── SIGNATURE SCREEN — fullscreen, canvas rotated internally ── */
   #screen-sign{
-    display:none;
-    position:fixed;
-    /* rotate the whole screen 90deg so it's always landscape */
-    top:0;left:0;
-    width:100vh;   /* swapped: height becomes width */
-    height:100vw;  /* swapped: width becomes height */
-    transform:rotate(90deg);
-    transform-origin:top left;
-    /* offset so it covers the viewport */
-    margin-left:100vw;
-    z-index:200;
-    background:#f8fafc;
-    flex-direction:column;
+    display:none;position:fixed;inset:0;z-index:200;
+    background:#1a1d27;flex-direction:column;
   }
   #screen-sign.active{display:flex;}
 
   .sign-top{
-    background:#1a1d27;padding:6px 14px;
+    background:#1a1d27;padding:8px 16px;
     display:flex;align-items:center;justify-content:space-between;
     flex-shrink:0;border-bottom:1px solid #2e3347;
-    min-height:44px;
   }
-  .sign-label{color:#f1f5f9;font-size:12px;font-weight:700;letter-spacing:.03em;}
-  .sign-hint{color:#64748b;font-size:10px;margin-top:1px;}
+  .sign-label{color:#f1f5f9;font-size:13px;font-weight:700;letter-spacing:.03em;}
+  .sign-hint{color:#64748b;font-size:10px;margin-top:2px;}
 
   #sign-canvas{
     flex:1;touch-action:none;cursor:crosshair;
-    display:block;width:100%;background:#fff;
+    display:block;width:100%;
+    background:#ffffff;
+    border-radius:0;
   }
 
   .sign-bottom{
     background:#1a1d27;border-top:1px solid #2e3347;
-    padding:8px 14px;display:flex;gap:10px;flex-shrink:0;
-    min-height:52px;align-items:center;
+    padding:10px 16px;display:flex;gap:10px;flex-shrink:0;
   }
-  .sign-clear{flex:1;background:#22263a;border:1px solid #2e3347;border-radius:10px;color:#f1f5f9;font-size:14px;font-weight:600;padding:10px;cursor:pointer;font-family:inherit;}
-  .sign-confirm{flex:2;background:#2563eb;border:none;border-radius:10px;color:white;font-size:14px;font-weight:700;padding:10px;cursor:pointer;font-family:inherit;}
+  .sign-clear{flex:1;background:#22263a;border:1px solid #2e3347;border-radius:10px;color:#f1f5f9;font-size:15px;font-weight:600;padding:13px;cursor:pointer;font-family:inherit;}
+  .sign-confirm{flex:2;background:#2563eb;border:none;border-radius:10px;color:white;font-size:15px;font-weight:700;padding:13px;cursor:pointer;font-family:inherit;}
 
   /* OVERLAYS */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:center;justify-content:center;padding:24px;}
@@ -448,11 +437,15 @@ function startGenerate() {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     signCanvas = document.getElementById('sign-canvas');
     signCtx = signCanvas.getContext('2d');
-    // Canvas is rotated 90deg, so offsetWidth/Height already reflect landscape
-    signCanvas.width  = signCanvas.offsetWidth  || window.innerHeight;
-    signCanvas.height = signCanvas.offsetHeight || (window.innerWidth - 96);
+    // Use device pixel ratio for crisp lines
+    const dpr = window.devicePixelRatio || 1;
+    const w = signCanvas.offsetWidth;
+    const h = signCanvas.offsetHeight;
+    signCanvas.width  = w * dpr;
+    signCanvas.height = h * dpr;
+    signCtx.scale(dpr, dpr);
     signCtx.strokeStyle = '#0f172a';
-    signCtx.lineWidth = 3.5;
+    signCtx.lineWidth = 3;
     signCtx.lineCap = 'round';
     signCtx.lineJoin = 'round';
     hasMark = false;
@@ -469,8 +462,13 @@ function startGenerate() {
 
 function getPos(e) {
   const r = signCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
   const src = e.touches ? e.touches[0] : e;
-  return { x: src.clientX - r.left, y: src.clientY - r.top };
+  // Normalize by DPR since we scaled the context
+  return {
+    x: (src.clientX - r.left),
+    y: (src.clientY - r.top)
+  };
 }
 
 function signStart(e) {
@@ -498,7 +496,19 @@ function clearSignature() {
 
 async function confirmSignature() {
   if (!hasMark) { showToast('El cliente debe firmar antes de confirmar', 'error'); return; }
-  state.signatureData = signCanvas.toDataURL('image/png');
+
+  // Rotate the signature 90deg clockwise so it appears landscape in the PDF
+  const rotCanvas = document.createElement('canvas');
+  const sw = signCanvas.width;
+  const sh = signCanvas.height;
+  rotCanvas.width  = sh;  // swap dimensions
+  rotCanvas.height = sw;
+  const rotCtx = rotCanvas.getContext('2d');
+  rotCtx.translate(sh, 0);
+  rotCtx.rotate(Math.PI / 2);
+  rotCtx.drawImage(signCanvas, 0, 0);
+  state.signatureData = rotCanvas.toDataURL('image/png');
+
   document.getElementById('screen-sign').classList.remove('active');
   showToast('Generando PDF...', 'info');
   await buildPDF();
