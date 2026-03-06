@@ -5,364 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Control de Envases — Remito</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --border: #2e3347;
-    --blue: #3b82f6;
-    --blue-dark: #2563eb;
-    --green: #22c55e;
-    --green-dark: #16a34a;
-    --red: #ef4444;
-    --amber: #f59e0b;
-    --text: #f1f5f9;
-    --muted: #64748b;
-    --card-r: 14px;
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3347;
+    --blue:#3b82f6; --blue-dark:#2563eb; --green:#22c55e;
+    --red:#ef4444; --amber:#f59e0b; --text:#f1f5f9; --muted:#64748b; --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100dvh;overflow-x:hidden;}
+
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .header-logo{font-size:13px;font-weight:700;letter-spacing:.05em;color:var(--blue);text-transform:uppercase;}
+  .header-title{font-size:15px;font-weight:600;}
+
+  .screen{display:none;padding:20px;max-width:480px;margin:0 auto;}
+  .screen.active{display:block;}
+
+  .home-greeting{text-align:center;padding:28px 0 20px;}
+  .home-greeting h1{font-size:24px;font-weight:800;}
+  .home-greeting p{font-size:13px;color:var(--muted);margin-top:6px;}
+
+  .client-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:18px;}
+  .client-wrap label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+  .client-wrap input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:16px;outline:none;transition:border-color .2s;}
+  .client-wrap input:focus{border-color:var(--blue);}
+  .client-wrap input::placeholder{color:var(--muted);}
+
+  .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;}
+  .action-btn{border:none;border-radius:var(--r);padding:26px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;font-family:inherit;transition:transform .15s;position:relative;overflow:hidden;}
+  .action-btn:active{transform:scale(.97);}
+  .action-btn.ent{background:linear-gradient(135deg,#1e3a5f,#1e40af);border:1px solid #3b82f6aa;}
+  .action-btn.rec{background:linear-gradient(135deg,#14532d,#166534);border:1px solid #22c55eaa;}
+  .action-btn .icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+  .action-btn.ent .icon{background:rgba(59,130,246,.25);}
+  .action-btn.rec .icon{background:rgba(34,197,94,.25);}
+  .action-btn .lbl{font-size:17px;font-weight:700;color:white;}
+  .action-btn .sub{font-size:11px;color:rgba(255,255,255,.6);text-align:center;}
+  .badge{position:absolute;top:9px;right:9px;background:rgba(255,255,255,.18);border-radius:20px;padding:2px 8px;font-size:12px;font-weight:700;color:white;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px;}
+  .card h3{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;}
+  .s-item{display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:8px;padding:8px 12px;font-size:14px;margin-bottom:5px;}
+  .s-item .tube{font-weight:700;font-family:monospace;font-size:14px;}
+  .s-item .gas{color:var(--muted);font-size:12px;}
+  .s-item .del{background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;opacity:.6;}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:10px 0;font-style:italic;}
+
+  .gen-btn{width:100%;background:linear-gradient(135deg,var(--blue-dark),var(--blue));border:none;border-radius:var(--r);padding:16px;color:white;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .2s,transform .15s;margin-bottom:20px;}
+  .gen-btn:active{transform:scale(.98);}
+  .gen-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* SCANNER */
+  .scan-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+  .back-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:20px;font-family:inherit;}
+  .scan-title{font-size:20px;font-weight:700;}
+  .scan-title.blue{color:var(--blue);}
+  .scan-title.green{color:var(--green);}
+  #qr-reader{border-radius:14px;overflow:hidden;border:2px solid var(--border);margin-bottom:14px;background:black;min-height:280px;}
+  .scan-st{text-align:center;padding:11px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:14px;transition:all .3s;}
+  .scan-st.wait{background:var(--surface2);color:var(--muted);}
+  .scan-st.ok{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+  .scan-st.err{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+  .scan-st.dup{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
+  .scanned-list{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;max-height:200px;overflow-y:auto;}
+  .sc-item{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 13px;animation:si .2s ease;}
+  @keyframes si{from{opacity:0;transform:translateY(-7px);}to{opacity:1;transform:translateY(0);}}
+  .sc-item .num{font-weight:700;font-family:monospace;font-size:15px;}
+  .sc-item .info{font-size:12px;color:var(--muted);margin-top:2px;}
+  .sc-item .rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:20px;opacity:.6;}
+  .done-btn{width:100%;padding:16px;border-radius:var(--r);border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s,opacity .2s;}
+  .done-btn:active{transform:scale(.98);}
+  .done-btn.blue{background:var(--blue);color:white;}
+  .done-btn.green{background:var(--green);color:white;}
+  .done-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ── SIGNATURE SCREEN — fullscreen ── */
+  #screen-sign{
+    display:none;position:fixed;inset:0;z-index:200;
+    background:#f8fafc;flex-direction:column;
+  }
+  #screen-sign.active{display:flex;}
+
+  .sign-top{
+    background:#1a1d27;padding:8px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;border-bottom:1px solid #2e3347;
+  }
+  .sign-label{color:#f1f5f9;font-size:12px;font-weight:700;letter-spacing:.03em;}
+  .sign-hint{color:#64748b;font-size:10px;margin-top:2px;}
+
+  #sign-canvas{
+    flex:1;touch-action:none;cursor:crosshair;
+    display:block;width:100%;background:#fff;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100dvh;
-    overflow-x: hidden;
+  .sign-bottom{
+    background:#1a1d27;border-top:1px solid #2e3347;
+    padding:10px 16px;display:flex;gap:10px;flex-shrink:0;
   }
+  .sign-clear{flex:1;background:#22263a;border:1px solid #2e3347;border-radius:10px;color:#f1f5f9;font-size:15px;font-weight:600;padding:13px;cursor:pointer;font-family:inherit;}
+  .sign-confirm{flex:2;background:#2563eb;border:none;border-radius:10px;color:white;font-size:15px;font-weight:700;padding:13px;cursor:pointer;font-family:inherit;}
 
-  /* ── HEADER ── */
-  .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-logo {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--blue);
-    text-transform: uppercase;
-  }
-  .header-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-  }
+  /* OVERLAYS */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:center;justify-content:center;padding:24px;}
+  .overlay.active{display:flex;}
+  .dialog{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;max-width:320px;width:100%;}
+  .dialog h2{font-size:18px;font-weight:700;margin-bottom:10px;}
+  .dialog p{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:20px;}
+  .dialog-btns{display:flex;gap:10px;}
+  .dialog-btns button{flex:1;padding:13px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;border:none;}
+  .btn-cancel{background:var(--surface2);color:var(--text);}
+  .btn-danger{background:var(--red);color:white;}
+  .btn-primary{background:var(--blue);color:white;}
+  .btn-full{width:100%;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;border:none;margin-bottom:10px;}
 
-  /* ── SCREENS ── */
-  .screen { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
-  .screen.active { display: block; }
-
-  /* ── HOME SCREEN ── */
-  .home-greeting {
-    text-align: center;
-    padding: 32px 0 24px;
-  }
-  .home-greeting h1 {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1.2;
-  }
-  .home-greeting p {
-    font-size: 14px;
-    color: var(--muted);
-    margin-top: 8px;
-  }
-
-  .client-input-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-r);
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-  .client-input-wrap label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-  .client-input-wrap input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    color: var(--text);
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .client-input-wrap input:focus { border-color: var(--blue); }
-  .client-input-wrap input::placeholder { color: var(--muted); }
-
-  .action-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-
-  .action-btn {
-    border: none;
-    border-radius: var(--card-r);
-    padding: 28px 16px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    font-family: inherit;
-    transition: transform 0.15s, opacity 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-  .action-btn:active { transform: scale(0.97); opacity: 0.9; }
-
-  .action-btn.entregados {
-    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
-    border: 1px solid #3b82f6aa;
-  }
-  .action-btn.recibidos {
-    background: linear-gradient(135deg, #14532d 0%, #166534 100%);
-    border: 1px solid #22c55eaa;
-  }
-
-  .action-btn .icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-  }
-  .action-btn.entregados .icon { background: rgba(59,130,246,0.25); }
-  .action-btn.recibidos .icon { background: rgba(34,197,94,0.25); }
-
-  .action-btn .label {
-    font-size: 17px;
-    font-weight: 700;
-    color: white;
-    text-align: center;
-  }
-  .action-btn .sublabel {
-    font-size: 12px;
-    color: rgba(255,255,255,0.6);
-    text-align: center;
-    line-height: 1.3;
-  }
-
-  .count-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-weight: 700;
-    color: white;
-  }
-
-  /* ── SUMMARY CARD ── */
-  .summary-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--card-r);
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  .summary-card h3 {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-  .summary-list { display: flex; flex-direction: column; gap: 6px; }
-  .summary-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 14px;
-  }
-  .summary-item .tube { font-weight: 700; font-family: monospace; font-size: 15px; }
-  .summary-item .gas { color: var(--muted); font-size: 13px; }
-  .summary-item .del-btn {
-    background: none;
-    border: none;
-    color: var(--red);
-    cursor: pointer;
-    font-size: 18px;
-    padding: 0 4px;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-  }
-  .summary-item .del-btn:hover { opacity: 1; }
-  .summary-empty {
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
-    padding: 12px 0;
-    font-style: italic;
-  }
-
-  /* Generate button */
-  .generate-btn {
-    width: 100%;
-    background: linear-gradient(135deg, var(--blue-dark), var(--blue));
-    border: none;
-    border-radius: var(--card-r);
-    padding: 16px;
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: opacity 0.2s, transform 0.15s;
-  }
-  .generate-btn:active { transform: scale(0.98); }
-  .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* ── SCANNER SCREEN ── */
-  .scanner-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .back-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 8px 12px;
-    color: var(--text);
-    cursor: pointer;
-    font-size: 20px;
-    font-family: inherit;
-  }
-  .scanner-title {
-    font-size: 20px;
-    font-weight: 700;
-  }
-  .scanner-title.blue { color: var(--blue); }
-  .scanner-title.green { color: var(--green); }
-
-  #qr-reader {
-    border-radius: 14px;
-    overflow: hidden;
-    border: 2px solid var(--border);
-    margin-bottom: 16px;
-    background: black;
-    min-height: 280px;
-  }
-  #qr-reader video { border-radius: 12px; }
-
-  .scan-status {
-    text-align: center;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    transition: all 0.3s;
-  }
-  .scan-status.waiting { background: var(--surface2); color: var(--muted); }
-  .scan-status.success { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-  .scan-status.error { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-  .scan-status.dupe { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
-
-  .scanned-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
-    max-height: 220px;
-    overflow-y: auto;
-  }
-  .scanned-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 14px;
-    animation: slideIn 0.2s ease;
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .scanned-item .num { font-weight: 700; font-family: monospace; font-size: 16px; }
-  .scanned-item .info { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .scanned-item .remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 20px; opacity: 0.6; }
-
-  .done-btn {
-    width: 100%;
-    padding: 16px;
-    border-radius: var(--card-r);
-    border: none;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    transition: transform 0.15s, opacity 0.2s;
-  }
-  .done-btn:active { transform: scale(0.98); }
-  .done-btn.blue { background: var(--blue); color: white; }
-  .done-btn.green { background: var(--green); color: white; }
-  .done-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* ── TOAST ── */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 999;
-    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-    white-space: nowrap;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { color: var(--green); border-color: rgba(34,197,94,0.3); }
-  .toast.error { color: var(--red); border-color: rgba(239,68,68,0.3); }
-  .toast.info { color: var(--blue); border-color: rgba(59,130,246,0.3); }
-
-  /* ── PDF PREVIEW hidden ── */
-  #pdf-template { display: none; }
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.success{color:var(--green);border-color:rgba(34,197,94,.3);}
+  .toast.error{color:var(--red);border-color:rgba(239,68,68,.3);}
+  .toast.info{color:var(--blue);border-color:rgba(59,130,246,.3);}
 </style>
 </head>
 <body>
@@ -372,93 +137,116 @@
   <div class="header-title">Remito Digital</div>
 </div>
 
-<!-- HOME SCREEN -->
+<!-- HOME -->
 <div class="screen active" id="screen-home">
   <div class="home-greeting">
     <h1>Control de Envases</h1>
-    <p>Escaneá los QR de los envases para generar el remito</p>
+    <p>Escaneá los QR para generar el remito</p>
   </div>
 
-  <div class="client-input-wrap">
+  <div class="client-wrap">
     <label>Cliente</label>
-    <input type="text" id="client-name" placeholder="Nombre del cliente..." autocomplete="off" />
+    <input type="text" id="client-name" placeholder="Nombre del cliente..." autocomplete="off"/>
   </div>
 
   <div class="action-grid">
-    <button class="action-btn entregados" onclick="openScanner('entregados')">
+    <button class="action-btn ent" onclick="openScanner('entregados')">
       <div class="icon">📦</div>
-      <div class="label">Entregados</div>
-      <div class="sublabel">Tubos llenos que dejás</div>
-      <div class="count-badge" id="badge-entregados">0</div>
+      <div class="lbl">Entregados</div>
+      <div class="sub">Tubos llenos que dejás</div>
+      <div class="badge" id="badge-e">0</div>
     </button>
-    <button class="action-btn recibidos" onclick="openScanner('recibidos')">
+    <button class="action-btn rec" onclick="openScanner('recibidos')">
       <div class="icon">↩️</div>
-      <div class="label">Recibidos</div>
-      <div class="sublabel">Tubos vacíos que retirás</div>
-      <div class="count-badge" id="badge-recibidos">0</div>
+      <div class="lbl">Recibidos</div>
+      <div class="sub">Tubos vacíos que retirás</div>
+      <div class="badge" id="badge-r">0</div>
     </button>
   </div>
 
-  <!-- Summary -->
-  <div class="summary-card">
-    <h3>📦 Tubos Entregados (<span id="count-e">0</span>)</h3>
-    <div class="summary-list" id="list-entregados">
-      <div class="summary-empty">Sin escanear aún</div>
-    </div>
+  <div class="card">
+    <h3>📦 Tubos Entregados (<span id="cnt-e">0</span>)</h3>
+    <div id="list-entregados"><div class="empty">Sin escanear aún</div></div>
+  </div>
+  <div class="card">
+    <h3>↩️ Tubos Recibidos (<span id="cnt-r">0</span>)</h3>
+    <div id="list-recibidos"><div class="empty">Sin escanear aún</div></div>
   </div>
 
-  <div class="summary-card">
-    <h3>↩️ Tubos Recibidos (<span id="count-r">0</span>)</h3>
-    <div class="summary-list" id="list-recibidos">
-      <div class="summary-empty">Sin escanear aún</div>
-    </div>
-  </div>
-
-  <button class="generate-btn" id="gen-btn" onclick="generatePDF()" disabled>
-    📄 Generar y compartir remito
+  <button class="gen-btn" id="gen-btn" onclick="startGenerate()" disabled>
+    ✍️ Generar remito y firmar
   </button>
 </div>
 
-<!-- SCANNER SCREEN -->
+<!-- SCANNER -->
 <div class="screen" id="screen-scanner">
-  <div class="scanner-header">
+  <div class="scan-hdr">
     <button class="back-btn" onclick="closeScanner()">←</button>
     <div>
-      <div class="scanner-title" id="scanner-title">Escaneando...</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px" id="scanner-sub"></div>
+      <div class="scan-title" id="scan-title">Escaneando...</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px" id="scan-sub"></div>
     </div>
   </div>
-
   <div id="qr-reader"></div>
-
-  <div class="scan-status waiting" id="scan-status">
-    📷 Apuntá la cámara al código QR del envase
-  </div>
-
+  <div class="scan-st wait" id="scan-st">📷 Apuntá la cámara al código QR del envase</div>
   <div class="scanned-list" id="scanned-list"></div>
-
-  <button class="done-btn" id="done-btn" onclick="closeScanner()" disabled>
-    Listo — guardar escaneados
-  </button>
+  <button class="done-btn" id="done-btn" onclick="closeScanner()" disabled>Listo — guardar escaneados</button>
 </div>
 
-<!-- Hidden PDF template -->
-<div id="pdf-template"></div>
+<!-- SIGNATURE — fullscreen -->
+<div id="screen-sign">
+  <div class="sign-top">
+    <div>
+      <div class="sign-label">✍️ Firma del cliente</div>
+      <div class="sign-hint">Firmá para confirmar la entrega / recepción de envases</div>
+    </div>
+  </div>
+  <canvas id="sign-canvas"></canvas>
+  <div class="sign-bottom">
+    <button class="sign-clear" onclick="clearSignature()">🗑 Borrar</button>
+    <button class="sign-confirm" onclick="confirmSignature()">Confirmar y generar →</button>
+  </div>
+</div>
+
+<!-- DIALOG: unsaved data warning -->
+<div class="overlay" id="dlg-unsaved">
+  <div class="dialog">
+    <h2>⚠️ Datos sin guardar</h2>
+    <p>Tenés <strong id="dlg-count"></strong> envases escaneados. Si salís ahora se perderán.</p>
+    <div class="dialog-btns">
+      <button class="btn-cancel" onclick="closeDialog('dlg-unsaved')">Quedarme</button>
+      <button class="btn-danger" onclick="confirmLeave()">Salir igual</button>
+    </div>
+  </div>
+</div>
+
+<!-- DIALOG: share options -->
+<div class="overlay" id="dlg-share">
+  <div class="dialog">
+    <h2>📄 Remito listo</h2>
+    <p>El PDF incluye la firma del cliente. ¿Cómo querés enviarlo?</p>
+    <button class="btn-full btn-primary" onclick="shareRemito()">📤 Compartir (WhatsApp, email...)</button>
+    <button class="btn-full btn-cancel" onclick="downloadRemito()">⬇️ Descargar PDF</button>
+    <button style="width:100%;padding:10px;border:none;background:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;" onclick="closeDialogAndReset()">Nuevo remito</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── STATE ──────────────────────────────────────────────────────────────────
+// ── STATE ──
 const state = {
-  entregados: [], // [{tube, gas, capacity}]
-  recibidos:  [],
+  entregados: [],
+  recibidos: [],
   currentMode: null,
   scanner: null,
   remitoNum: parseInt(localStorage.getItem('remitoNum') || '0') + 1,
+  pdfBlob: null,
+  pdfFileName: null,
+  signatureData: null,
 };
 
-// ── TUBE DATA LOOKUP ───────────────────────────────────────────────────────
-// Reads tube info from QR URL params
+// ── QR PARSER ──
 function parseTubeFromQR(text) {
   try {
     const url = new URL(text);
@@ -471,101 +259,108 @@ function parseTubeFromQR(text) {
   return null;
 }
 
-// ── SCANNER ────────────────────────────────────────────────────────────────
+// ── UNSAVED DATA GUARD ──
+function hasUnsavedData() {
+  return state.entregados.length > 0 || state.recibidos.length > 0;
+}
+
+// Intercept browser back button on Android
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', () => {
+  history.pushState(null, '', location.href);
+  if (hasUnsavedData()) {
+    const total = state.entregados.length + state.recibidos.length;
+    document.getElementById('dlg-count').textContent =
+      `${total} envase${total !== 1 ? 's' : ''}`;
+    document.getElementById('dlg-unsaved').classList.add('active');
+  }
+});
+
+// Browser tab/window close
+window.addEventListener('beforeunload', e => {
+  if (hasUnsavedData()) { e.preventDefault(); e.returnValue = ''; }
+});
+
+function confirmLeave() {
+  closeDialog('dlg-unsaved');
+  state.entregados = []; state.recibidos = [];
+  renderHome();
+}
+function closeDialog(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// ── SCANNER ──
 function openScanner(mode) {
   state.currentMode = mode;
   document.getElementById('screen-home').classList.remove('active');
   document.getElementById('screen-scanner').classList.add('active');
-
-  const title = document.getElementById('scanner-title');
-  const sub   = document.getElementById('scanner-sub');
+  const title = document.getElementById('scan-title');
   const btn   = document.getElementById('done-btn');
-
   if (mode === 'entregados') {
     title.textContent = '📦 Tubos Entregados';
-    title.className = 'scanner-title blue';
+    title.className = 'scan-title blue';
     btn.className = 'done-btn blue';
   } else {
     title.textContent = '↩️ Tubos Recibidos';
-    title.className = 'scanner-title green';
+    title.className = 'scan-title green';
     btn.className = 'done-btn green';
   }
-
-  // Show current list
   renderScannerList();
   updateDoneBtn();
-
-  // Start camera
   startCamera();
 }
 
 function startCamera() {
-  const config = {
-    fps: 15,
-    qrbox: { width: 250, height: 250 },
-    aspectRatio: 1.0,
-    showTorchButtonIfSupported: true,
-  };
-
-  state.scanner = new Html5Qrcode("qr-reader");
+  state.scanner = new Html5Qrcode('qr-reader');
   state.scanner.start(
-    { facingMode: "environment" },
-    config,
+    { facingMode: 'environment' },
+    { fps: 15, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0, showTorchButtonIfSupported: true },
     onScanSuccess,
-    () => {} // ignore errors
-  ).catch(err => {
-    setStatus('error', '⚠️ No se pudo acceder a la cámara. Verificá los permisos.');
-  });
+    () => {}
+  ).catch(() => setSt('err', '⚠️ No se pudo acceder a la cámara. Verificá los permisos.'));
 }
 
 function onScanSuccess(text) {
   const parsed = parseTubeFromQR(text);
   if (!parsed) {
-    setStatus('error', '❌ QR no reconocido — usá los QR del sistema');
-    setTimeout(() => setStatus('waiting', '📷 Apuntá la cámara al código QR'), 2000);
+    setSt('err', '❌ QR no reconocido — usá los QR del sistema');
+    setTimeout(() => setSt('wait', '📷 Apuntá la cámara al código QR'), 2000);
     return;
   }
-
   const list = state[state.currentMode];
   if (list.find(i => i.tube === parsed.tube)) {
-    setStatus('dupe', `⚠️ Tubo ${parsed.tube} ya escaneado`);
-    setTimeout(() => setStatus('waiting', '📷 Apuntá la cámara al código QR'), 2000);
+    setSt('dup', `⚠️ Tubo ${parsed.tube} ya escaneado`);
+    setTimeout(() => setSt('wait', '📷 Apuntá la cámara al código QR'), 2000);
     return;
   }
-
-  // Vibrate on success
   if (navigator.vibrate) navigator.vibrate(100);
-
   list.push(parsed);
   renderScannerList();
   updateDoneBtn();
-  setStatus('success', `✅ Tubo ${parsed.tube} agregado`);
-  setTimeout(() => setStatus('waiting', '📷 Apuntá la cámara al código QR'), 1500);
+  setSt('ok', `✅ Tubo ${parsed.tube} agregado`);
+  setTimeout(() => setSt('wait', '📷 Apuntá la cámara al código QR'), 1500);
 }
 
-function setStatus(type, msg) {
-  const el = document.getElementById('scan-status');
-  el.className = `scan-status ${type}`;
+function setSt(type, msg) {
+  const el = document.getElementById('scan-st');
+  el.className = `scan-st ${type}`;
   el.textContent = msg;
 }
 
 function renderScannerList() {
   const list = state[state.currentMode];
   const el = document.getElementById('scanned-list');
-  if (list.length === 0) {
-    el.innerHTML = '';
-    return;
-  }
+  if (!list.length) { el.innerHTML = ''; return; }
   el.innerHTML = [...list].reverse().map((item, idx) => {
-    const realIdx = list.length - 1 - idx;
-    return `
-      <div class="scanned-item">
-        <div>
-          <div class="num">${item.tube}</div>
-          <div class="info">${item.gas || 'Gas no especificado'}${item.capacity ? ' · ' + item.capacity : ''}</div>
-        </div>
-        <button class="remove" onclick="removeScanned(${realIdx})">×</button>
-      </div>`;
+    const ri = list.length - 1 - idx;
+    return `<div class="sc-item">
+      <div>
+        <div class="num">${item.tube}</div>
+        <div class="info">${item.gas || '—'}${item.capacity ? ' · ' + item.capacity : ''}</div>
+      </div>
+      <button class="rm" onclick="removeScanned(${ri})">×</button>
+    </div>`;
   }).join('');
 }
 
@@ -576,12 +371,11 @@ function removeScanned(idx) {
 }
 
 function updateDoneBtn() {
-  const count = state[state.currentMode]?.length || 0;
+  const n = state[state.currentMode]?.length || 0;
   const btn = document.getElementById('done-btn');
-  btn.disabled = count === 0;
-  btn.textContent = count === 0
-    ? 'Listo — guardar escaneados'
-    : `Listo — guardar ${count} envase${count !== 1 ? 's' : ''}`;
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Listo — guardar escaneados'
+    : `Listo — guardar ${n} envase${n !== 1 ? 's' : ''}`;
 }
 
 async function closeScanner() {
@@ -594,320 +388,345 @@ async function closeScanner() {
   renderHome();
 }
 
-// ── HOME RENDER ─────────────────────────────────────────────────────────────
+// ── HOME ──
 function renderHome() {
-  renderHomeList('entregados');
-  renderHomeList('recibidos');
-  document.getElementById('badge-entregados').textContent = state.entregados.length;
-  document.getElementById('badge-recibidos').textContent  = state.recibidos.length;
-  document.getElementById('count-e').textContent = state.entregados.length;
-  document.getElementById('count-r').textContent = state.recibidos.length;
-
+  renderList('entregados');
+  renderList('recibidos');
+  document.getElementById('badge-e').textContent = state.entregados.length;
+  document.getElementById('badge-r').textContent = state.recibidos.length;
+  document.getElementById('cnt-e').textContent = state.entregados.length;
+  document.getElementById('cnt-r').textContent = state.recibidos.length;
   const hasData = state.entregados.length > 0 || state.recibidos.length > 0;
   const hasClient = document.getElementById('client-name').value.trim().length > 0;
   document.getElementById('gen-btn').disabled = !(hasData && hasClient);
 }
 
-function renderHomeList(mode) {
+function renderList(mode) {
   const list = state[mode];
   const el = document.getElementById(`list-${mode}`);
-  if (list.length === 0) {
-    el.innerHTML = '<div class="summary-empty">Sin escanear aún</div>';
-    return;
-  }
+  if (!list.length) { el.innerHTML = '<div class="empty">Sin escanear aún</div>'; return; }
   el.innerHTML = list.map((item, idx) => `
-    <div class="summary-item">
+    <div class="s-item">
       <div>
         <span class="tube">${item.tube}</span>
         <span class="gas"> · ${item.gas || '—'}</span>
       </div>
-      <button class="del-btn" onclick="deleteFromHome('${mode}', ${idx})">×</button>
+      <button class="del" onclick="deleteItem('${mode}',${idx})">×</button>
     </div>`).join('');
 }
 
-function deleteFromHome(mode, idx) {
+function deleteItem(mode, idx) {
   state[mode].splice(idx, 1);
   renderHome();
 }
 
 document.getElementById('client-name').addEventListener('input', renderHome);
 
-// ── PDF GENERATION ─────────────────────────────────────────────────────────
-async function generatePDF() {
+// ── SIGNATURE ──
+let signCtx, signCanvas, drawing = false, hasMark = false, lastX = 0, lastY = 0;
+
+function startGenerate() {
   const clientName = document.getElementById('client-name').value.trim();
   if (!clientName) { showToast('Ingresá el nombre del cliente', 'error'); return; }
 
-  showToast('Generando PDF...', 'info');
+  const signScreen = document.getElementById('screen-sign');
+  signScreen.classList.add('active');
 
+  // Wait one frame so the element is visible and has dimensions
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    signCanvas = document.getElementById('sign-canvas');
+    signCtx = signCanvas.getContext('2d');
+    signCanvas.width  = signCanvas.offsetWidth;
+    signCanvas.height = signCanvas.offsetHeight;
+    signCtx.strokeStyle = '#0f172a';
+    signCtx.lineWidth = 3;
+    signCtx.lineCap = 'round';
+    signCtx.lineJoin = 'round';
+    hasMark = false;
+
+    signCanvas.addEventListener('mousedown',  signStart);
+    signCanvas.addEventListener('mousemove',  signMove);
+    signCanvas.addEventListener('mouseup',    signEnd);
+    signCanvas.addEventListener('mouseleave', signEnd);
+    signCanvas.addEventListener('touchstart', signStart, { passive: false });
+    signCanvas.addEventListener('touchmove',  signMove,  { passive: false });
+    signCanvas.addEventListener('touchend',   signEnd,   { passive: false });
+  }));
+}
+
+function getPos(e) {
+  const r = signCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+
+function signStart(e) {
+  e.preventDefault();
+  drawing = true; hasMark = true;
+  const p = getPos(e);
+  lastX = p.x; lastY = p.y;
+  signCtx.beginPath();
+  signCtx.moveTo(lastX, lastY);
+}
+function signMove(e) {
+  e.preventDefault();
+  if (!drawing) return;
+  const p = getPos(e);
+  signCtx.lineTo(p.x, p.y);
+  signCtx.stroke();
+  lastX = p.x; lastY = p.y;
+}
+function signEnd(e) { e.preventDefault(); drawing = false; }
+
+function clearSignature() {
+  signCtx.clearRect(0, 0, signCanvas.width, signCanvas.height);
+  hasMark = false;
+}
+
+async function confirmSignature() {
+  if (!hasMark) { showToast('El cliente debe firmar antes de confirmar', 'error'); return; }
+  state.signatureData = signCanvas.toDataURL('image/png');
+  document.getElementById('screen-sign').classList.remove('active');
+  showToast('Generando PDF...', 'info');
+  await buildPDF();
+  document.getElementById('dlg-share').classList.add('active');
+}
+
+// ── PDF BUILD ──
+async function buildPDF() {
+  const clientName = document.getElementById('client-name').value.trim();
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297, margin = 12;
 
-  const W = 210, H = 297;
-  const margin = 12;
-
-  // ── HEADER BOX ──
-  // Layout: [empresa: 12-88] | [sello: 88-118] | [titulo+datos: 118-198]
   const now = new Date();
-  const dd = String(now.getDate()).padStart(2,'0');
-  const mm = String(now.getMonth()+1).padStart(2,'0');
-  const yy = String(now.getFullYear());
+  const dd  = String(now.getDate()).padStart(2, '0');
+  const mm  = String(now.getMonth() + 1).padStart(2, '0');
+  const yy  = String(now.getFullYear());
   const rNum = String(state.remitoNum).padStart(8, '0');
 
-  doc.setDrawColor(30, 60, 120);
-  doc.setLineWidth(0.5);
-  doc.rect(margin, 10, W - margin*2, 44);
-
-  // Dividers
+  // ── HEADER ──
+  doc.setDrawColor(30, 60, 120); doc.setLineWidth(0.5);
+  doc.rect(margin, 10, W - margin * 2, 44);
   doc.setLineWidth(0.4);
   doc.line(88, 10, 88, 54);   // empresa | sello
-  doc.line(120, 10, 120, 54); // sello | titulo
+  doc.line(120, 10, 120, 54); // sello | título
 
-  // ── EMPRESA (left column) ──
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(20, 40, 100);
+  // Empresa (col izquierda)
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(20, 40, 100);
   doc.text('OXÍGENO BS. AS.', 14, 19);
-
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
   doc.text('FERRETERÍA INDUSTRIAL', 14, 24);
   doc.text('de Marcelo F. Vital', 14, 28);
   doc.text('Argon · Atal · Co2 · Nitrógeno', 14, 32);
   doc.text('Acetileno · Helio · Oxígeno', 14, 36);
   doc.text('Mig · Tig · Plasma / Reparaciones', 14, 40);
-  doc.setFont('helvetica', 'bold');
-  doc.text('TALLER PROPIO', 14, 44);
+  doc.setFont('helvetica', 'bold'); doc.text('TALLER PROPIO', 14, 44);
   doc.setFont('helvetica', 'normal');
   doc.text('ALVEAR Nº 2031 (C.P. 1611)', 14, 48);
-  doc.text('DON TORCUATO', 14, 52);
+  doc.text('DON TORCUATO — TEL: 4741-6159', 14, 52);
 
-  // ── SELLO (center column) ──
-  doc.setDrawColor(30,60,120);
-  doc.setLineWidth(0.5);
+  // Sello (col centro)
+  doc.setDrawColor(30, 60, 120); doc.setLineWidth(0.5);
   doc.rect(90, 12, 28, 18);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(20,40,100);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(20, 40, 100);
   doc.text('DOCUMENTO', 104, 18, { align: 'center' });
-  doc.text('NO VÁLIDO', 104, 23, { align: 'center' });
+  doc.text('NO VÁLIDO',  104, 23, { align: 'center' });
   doc.text('COMO FACTURA', 104, 28, { align: 'center' });
 
-  // ── TITULO+DATOS (right column) ──
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(20, 40, 100);
+  // Título + datos (col derecha)
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(20, 40, 100);
   doc.text('CONTROL DE ENVASES', 159, 17, { align: 'center' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(30,30,30);
+  doc.setFontSize(9); doc.setTextColor(30, 30, 30);
   doc.text(`Nº 0001 - ${rNum}`, 159, 24, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
   doc.text(`Fecha: ${dd} / ${mm} / ${yy}`, 159, 31, { align: 'center' });
-
-  doc.setFontSize(7.5);
-  doc.setTextColor(60,60,60);
+  doc.setFontSize(7.5); doc.setTextColor(60, 60, 60);
   doc.text('C.U.I.T.: 20-17996988-3', 159, 38, { align: 'center' });
   doc.text('ING. BRUTOS C.M.: 902-435522-9', 159, 43, { align: 'center' });
   doc.text('INICIO ACTIVIDAD: 01/01/96', 159, 48, { align: 'center' });
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
   doc.text('I.V.A. Responsable Inscripto', 159, 53, { align: 'center' });
 
-  // ── CLIENT INFO ──
+  // ── CLIENTE ──
   let y = 58;
-  doc.setDrawColor(30,60,120);
-  doc.setLineWidth(0.4);
-  doc.rect(margin, y, W - margin*2, 28);
-  doc.line(90, y, 90, y+28);
-  doc.line(90, y+8, W-margin, y+8);
-  doc.line(90, y+17, W-margin, y+17);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(40,40,40);
-  doc.text('Señores:', margin+2, y+6);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(clientName, margin+24, y+6);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.text('Dirección:', margin+2, y+14);
-  doc.text('I.V.A.:', margin+2, y+23);
-
-  doc.text('Cuenta Nº', 92, y+6);
-  doc.text('O / Compra Nº:', 92, y+14);
-  doc.text('C.U.I.T.:', 92, y+23);
+  doc.setDrawColor(30, 60, 120); doc.setLineWidth(0.4);
+  doc.rect(margin, y, W - margin * 2, 28);
+  doc.line(90, y, 90, y + 28);
+  doc.line(90, y + 9,  W - margin, y + 9);
+  doc.line(90, y + 18, W - margin, y + 18);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(40, 40, 40);
+  doc.text('Señores:', margin + 2, y + 6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(clientName, margin + 24, y + 6);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  doc.text('Dirección:', margin + 2, y + 15);
+  doc.text('I.V.A.:',    margin + 2, y + 24);
+  doc.text('Cuenta Nº',      92, y + 6);
+  doc.text('O / Compra Nº:', 92, y + 15);
+  doc.text('C.U.I.T.:',      92, y + 24);
 
   // ── CONDICIONES ──
   y += 28;
-  doc.setDrawColor(30,60,120);
-  doc.rect(margin, y, W-margin*2, 8);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(40,40,40);
-  doc.text('CONDICIONES DE VENTA:', margin+2, y+5.5);
-  doc.text('Cont.', margin+52, y+5.5);
-  doc.rect(margin+62, y+1.5, 10, 5);
-  doc.text('Cta. Cte.', margin+76, y+5.5);
-  doc.rect(margin+92, y+1.5, 10, 5);
+  doc.setDrawColor(30, 60, 120);
+  doc.rect(margin, y, W - margin * 2, 8);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(40, 40, 40);
+  doc.text('CONDICIONES DE VENTA:', margin + 2, y + 5.5);
+  doc.text('Cont.', margin + 52, y + 5.5);
+  doc.rect(margin + 62, y + 1.5, 10, 5);
+  doc.text('Cta. Cte.', margin + 76, y + 5.5);
+  doc.rect(margin + 92, y + 1.5, 10, 5);
 
-  // ── MAIN TABLE ──
+  // ── TABLA ──
   y += 8;
   const tableTop = y;
-  const colMid = margin + (W - margin*2) / 2 + 2;
-  const tableW = W - margin*2;
-  const halfW = tableW / 2 - 1;
+  const tableW   = W - margin * 2;
+  const colMid   = margin + tableW / 2 + 2;
+  const halfW    = tableW / 2 - 1;
+  const tableH   = 140;
 
-  // Table border
-  doc.setDrawColor(30,60,120);
-  doc.setLineWidth(0.4);
-  doc.rect(margin, y, tableW, 175);
-  doc.line(colMid, y, colMid, y+175);
+  doc.setDrawColor(30, 60, 120); doc.setLineWidth(0.4);
+  doc.rect(margin, y, tableW, tableH);
+  doc.line(colMid, y, colMid, y + tableH);
 
-  // Column headers
+  // Cabeceras principales
   doc.setFillColor(220, 230, 250);
   doc.rect(margin, y, halfW, 8, 'F');
   doc.rect(colMid, y, halfW, 8, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(20,40,100);
-  doc.text('TUBOS VACÍOS RECIBIDOS', margin + halfW/2, y+5.5, { align: 'center' });
-  doc.text('TUBOS LLENOS ENTREGADOS', colMid + halfW/2, y+5.5, { align: 'center' });
-
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(20, 40, 100);
+  doc.text('TUBOS VACÍOS RECIBIDOS',   margin + halfW / 2, y + 5.5, { align: 'center' });
+  doc.text('TUBOS LLENOS ENTREGADOS',  colMid + halfW / 2, y + 5.5, { align: 'center' });
   y += 8;
 
-  // Sub-headers
-  const subCols = 3;
-  const subW = halfW / subCols;
-  const leftCols = ['Nº Tubo', 'Gas', 'Metraje'];
-  const rightCols = ['Nº Tubo', 'Gas', 'Metraje'];
-
+  // Sub-cabeceras
+  const subW = halfW / 3;
   doc.setFillColor(235, 240, 255);
   doc.rect(margin, y, halfW, 6, 'F');
   doc.rect(colMid, y, halfW, 6, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(40,40,40);
-
-  leftCols.forEach((h, i) => {
-    doc.text(h, margin + i*subW + subW/2, y+4, { align: 'center' });
-    if (i < 2) doc.line(margin + (i+1)*subW, y, margin + (i+1)*subW, tableTop+183);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(40, 40, 40);
+  ['Nº Tubo', 'Gas', 'Metraje'].forEach((h, i) => {
+    doc.text(h, margin + i * subW + subW / 2, y + 4, { align: 'center' });
+    doc.text(h, colMid + i * subW + subW / 2, y + 4, { align: 'center' });
+    if (i < 2) {
+      doc.line(margin + (i + 1) * subW, tableTop + 8, margin + (i + 1) * subW, tableTop + tableH);
+      doc.line(colMid + (i + 1) * subW, tableTop + 8, colMid + (i + 1) * subW, tableTop + tableH);
+    }
   });
-  rightCols.forEach((h, i) => {
-    doc.text(h, colMid + i*subW + subW/2, y+4, { align: 'center' });
-    if (i < 2) doc.line(colMid + (i+1)*subW, y, colMid + (i+1)*subW, tableTop+183);
-  });
-
   y += 6;
 
-  // Row height
+  // Filas
   const rowH = 7;
-  const maxRows = Math.floor(160 / rowH);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(30,30,30);
-
-  // Draw rows
+  const maxRows = Math.floor((tableH - 14) / rowH);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(30, 30, 30);
   for (let i = 0; i < maxRows; i++) {
     const ry = y + i * rowH;
-    doc.setDrawColor(200,210,230);
-    doc.setLineWidth(0.2);
+    doc.setDrawColor(200, 210, 230); doc.setLineWidth(0.2);
     doc.line(margin, ry, margin + tableW, ry);
 
-    // Left (recibidos)
     const rec = state.recibidos[i];
     if (rec) {
       doc.setFont('helvetica', 'bold');
-      doc.text(String(rec.tube), margin + subW*0 + subW/2, ry+5, { align: 'center', maxWidth: subW-2 });
+      doc.text(String(rec.tube), margin + subW * 0 + subW / 2, ry + 5, { align: 'center', maxWidth: subW - 2 });
       doc.setFont('helvetica', 'normal');
-      doc.text(rec.gas || '', margin + subW*1 + subW/2, ry+5, { align: 'center', maxWidth: subW-2 });
-      doc.text(rec.capacity || '', margin + subW*2 + subW/2, ry+5, { align: 'center', maxWidth: subW-2 });
+      doc.text(rec.gas || '',      margin + subW * 1 + subW / 2, ry + 5, { align: 'center', maxWidth: subW - 2 });
+      doc.text(rec.capacity || '', margin + subW * 2 + subW / 2, ry + 5, { align: 'center', maxWidth: subW - 2 });
     }
-
-    // Right (entregados)
     const ent = state.entregados[i];
     if (ent) {
       doc.setFont('helvetica', 'bold');
-      doc.text(String(ent.tube), colMid + subW*0 + subW/2, ry+5, { align: 'center', maxWidth: subW-2 });
+      doc.text(String(ent.tube), colMid + subW * 0 + subW / 2, ry + 5, { align: 'center', maxWidth: subW - 2 });
       doc.setFont('helvetica', 'normal');
-      doc.text(ent.gas || '', colMid + subW*1 + subW/2, ry+5, { align: 'center', maxWidth: subW-2 });
-      doc.text(ent.capacity || '', colMid + subW*2 + subW/2, ry+5, { align: 'center', maxWidth: subW-2 });
+      doc.text(ent.gas || '',      colMid + subW * 1 + subW / 2, ry + 5, { align: 'center', maxWidth: subW - 2 });
+      doc.text(ent.capacity || '', colMid + subW * 2 + subW / 2, ry + 5, { align: 'center', maxWidth: subW - 2 });
     }
   }
 
-  // ── FOOTER ──
-  const footY = tableTop + 183;
-  doc.setDrawColor(30,60,120);
-  doc.setLineWidth(0.4);
-  doc.rect(margin, footY, tableW, 12);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(40,40,40);
-  doc.text('Conforme Cliente:', margin+2, footY+8);
+  // ── CONFORME CLIENTE ──
+  const footY = tableTop + tableH;
+  doc.setDrawColor(30, 60, 120); doc.setLineWidth(0.4);
+  doc.rect(margin, footY, tableW, 10);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(40, 40, 40);
+  doc.text('Conforme Cliente:', margin + 2, footY + 7);
 
-  // Firma
-  const sigY = footY + 16;
-  doc.setDrawColor(80,80,80);
-  doc.setLineWidth(0.3);
-  doc.line(margin+20, sigY+18, margin+70, sigY+18);
-  doc.line(colMid+10, sigY+18, colMid+60, sigY+18);
-  doc.setFontSize(8);
-  doc.setTextColor(80,80,80);
-  doc.text('FIRMA', margin+45, sigY+22, { align: 'center' });
-  doc.text('ACLARACIÓN', colMid+35, sigY+22, { align: 'center' });
+  // ── FIRMA (ocupa el resto de la página) ──
+  const sigY = footY + 14;
+  const sigH = H - sigY - 6;
 
-  // Imprenta footer
-  doc.setFontSize(6);
-  doc.setTextColor(120,120,120);
-  doc.text('IMPRIMIO: TALLERES GRAFICOS JALIFI S.R.L. 4748-1907  CUIT 30-71411668-8  HAB. MUN. EXP. Nº 4112-2721/03', W/2, H-8, { align: 'center' });
+  doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.3);
+  doc.rect(margin, sigY, tableW, sigH);
 
-  // ── SHARE ──
-  const pdfBlob = doc.output('blob');
-  const fileName = `Remito_${clientName.replace(/\s+/g,'_')}_${dd}${mm}${yy}.pdf`;
+  // Label pequeño arriba
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(160, 160, 160);
+  doc.text('FIRMA DEL CLIENTE', W / 2, sigY + 5, { align: 'center' });
 
-  try {
-    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: `Remito ${clientName}` });
-      localStorage.setItem('remitoNum', state.remitoNum);
-  state.remitoNum++;
-  showToast('¡Remito compartido!', 'success');
-    } else {
-      // Fallback: download
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url; a.download = fileName; a.click();
-      URL.revokeObjectURL(url);
-      showToast('PDF descargado', 'success');
-    }
-  } catch (e) {
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = url; a.download = fileName; a.click();
-    URL.revokeObjectURL(url);
-    showToast('PDF descargado', 'success');
+  // Imagen de firma
+  if (state.signatureData) {
+    const pad = 3;
+    doc.addImage(
+      state.signatureData, 'PNG',
+      margin + pad,
+      sigY + 7,
+      tableW - pad * 2,
+      sigH - 12
+    );
   }
+
+  // Línea de firma
+  doc.setDrawColor(100, 100, 100); doc.setLineWidth(0.3);
+  doc.line(margin + 15, sigY + sigH - 4, margin + tableW - 15, sigY + sigH - 4);
+
+  // Guardar blob
+  state.pdfBlob     = doc.output('blob');
+  state.pdfFileName = `Remito_${clientName.replace(/\s+/g, '_')}_${dd}${mm}${yy}.pdf`;
 }
 
-// ── TOAST ──────────────────────────────────────────────────────────────────
+// ── SHARE ──
+async function shareRemito() {
+  closeDialog('dlg-share');
+  try {
+    const file = new File([state.pdfBlob], state.pdfFileName, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: `Remito ${document.getElementById('client-name').value.trim()}` });
+      onShared();
+      return;
+    }
+  } catch {}
+  downloadRemito();
+}
+
+function downloadRemito() {
+  closeDialog('dlg-share');
+  const url = URL.createObjectURL(state.pdfBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = state.pdfFileName; a.click();
+  URL.revokeObjectURL(url);
+  onShared();
+}
+
+function onShared() {
+  localStorage.setItem('remitoNum', state.remitoNum);
+  state.remitoNum++;
+  showToast('¡Remito guardado!', 'success');
+}
+
+function closeDialogAndReset() {
+  closeDialog('dlg-share');
+  state.entregados = []; state.recibidos = [];
+  state.pdfBlob = null; state.signatureData = null;
+  document.getElementById('client-name').value = '';
+  renderHome();
+}
+
+// ── TOAST ──
 let toastTimer;
 function showToast(msg, type = 'info') {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = `toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.className = `toast ${type}`; }, 2500);
+  toastTimer = setTimeout(() => { el.className = `toast ${type}`; }, 2800);
 }
 
-// Init
 renderHome();
 </script>
 </body>
